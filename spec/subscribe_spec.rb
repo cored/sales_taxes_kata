@@ -9,11 +9,21 @@ module Subscribe
     LINE_PATTERN = /^(\d+)\s(.+)\sat\s(\d+\.\d+)$/
     def self.for(line)
       quantity, product, price = line.scan(LINE_PATTERN).first
+      raise ArgumentError if quantity.to_s.empty? || price.to_s.empty?  || product.to_s.empty?
+
       new(quantity: quantity.to_i, product: product, price: price.to_f)
     end
 
     def total
       price * quantity
+    end
+
+    def to_h
+      {
+        product: product,
+        price: total,
+        quantity: quantity,
+      }
     end
   end
 
@@ -81,6 +91,32 @@ RSpec.describe Subscribe do
           expect(
             subscribe.call(basket).to_h
           ).to match(expectation)
+        end
+      end
+    end
+  end
+
+  describe Subscribe::Line do
+    subject(:line) { described_class }
+
+    describe '.for' do
+      it 'throws an argument error for empty lines' do
+        expect { line.for("''") }.to raise_error(ArgumentError)
+      end
+
+      context 'when passing non empty lines' do
+        let(:lines) do
+          {
+            "2 book at 12.49" => {product: "book", quantity: 2, price: 24.98},
+            "1 music CD at 14.99" => {product: "music CD", quantity: 1, price: 14.99},
+            "1 chocolate bar at 0.85" => {product: "chocolate bar", quantity: 1, price: 0.85}
+          }
+        end
+
+        it 'returns a valid line' do
+          lines.each_pair do |attributes, expectation|
+            expect(line.for(attributes).to_h).to match(expectation)
+          end
         end
       end
     end
