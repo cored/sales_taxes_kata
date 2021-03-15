@@ -2,12 +2,10 @@ module Subscribe
   extend self
 
   InvalidBasket = Class.new(StandardError)
-  EXEMPT_PRODUCTS = ["book", "chocolate bar", "packet of headache pills"]
-  SALE_TAX = 0.10
 
   Line = Struct.new(:quantity, :product, :price, keyword_init: true) do
     LINE_PATTERN = /^(\d+)\s(.+)\sat\s(\d+\.\d+)$/
-    EXEMPT_PRODUCTS = ["book", "chocolate bar", "packet of headache pills"]
+    EXEMPT_PRODUCTS = ["book", "chocolate bar", "packet of headache pills", "box of chocolates"]
 
     def self.for(line)
       quantity, product, price = line.scan(LINE_PATTERN).first
@@ -21,7 +19,11 @@ module Subscribe
     end
 
     def exempt?
-      EXEMPT_PRODUCTS.include? product
+      EXEMPT_PRODUCTS.include? product.gsub(/^imported\s/, '')
+    end
+
+    def imported?
+      product.include? "imported"
     end
 
     def to_h
@@ -34,10 +36,14 @@ module Subscribe
   end
 
   SaleTaxes = Struct.new(:line, :tax, keyword_init: true) do
-    def self.for(line)
-      tax = SALE_TAX unless line.exempt?
+    SALE_TAX = 0.10
+    IMPORT_TAX = 0.05
 
-      new(line: line, tax: ("%.2f" % [tax.to_f]).to_f)
+    def self.for(line)
+      sale_rate = SALE_TAX unless line.exempt?
+      import_rate = IMPORT_TAX if line.imported?
+
+      new(line: line, tax: ("%.2f" % [sale_rate.to_f + import_rate.to_f]).to_f)
     end
 
     def to_h
@@ -132,9 +138,27 @@ RSpec.describe Subscribe do
 
       it "return a receipt with the details" do
         baskets.each_pair do |basket, expectation|
-          expect(
-            subscribe.call(basket).to_h
-          ).to match(expectation)
+          expect(subscribe.call(basket).to_h).to match(expectation)
+        end
+      end
+    end
+
+    describe "Imported sale tax" do
+      context "apply 5% to all imported goods without exceptions" do
+        let(:baskets) do
+          {
+            "1 imported box of chocolates at 10.00" => {
+              products: [{product: "imported box of chocolates", quantity: 1, total_price: 10.50, taxes: 0.5}],
+              sale_taxes: 0.5,
+              total: 10.50
+            }
+          }
+        end
+
+        it "return a receipt with the details" do
+          baskets.each_pair do |basket, expectation|
+            expect(subscribe.call(basket).to_h).to match(expectation)
+          end
         end
       end
     end
@@ -198,6 +222,16 @@ RSpec.describe Subscribe do
       end
 
     end
+
+    describe "#imported?" do
+      it "returns `true` for imported products" do
+        expect(line.for("1 imported box of chocolates at 3.00")).to be_imported
+      end
+
+      it "returns `false` for non-imported products" do
+        expect(line.for("1 box of chocolates at 3.00")).not_to be_imported
+      end
+    end
   end
 
   describe Subscribe::SaleTaxes do
@@ -244,6 +278,26 @@ RSpec.describe Subscribe do
           expect(sale_taxes.for(line).to_h).to match(expectation)
         end
       end
+    end
+
+    context "when passing imported lines" do
+      let(:lines) do
+        {
+          Subscribe::Line.new(quantity: 1, product: "imported box of chocolates", price: 10.00) => {
+            quantity: 1, product: "imported box of chocolates", total_price: 10.50, taxes: 0.5
+          },
+          Subscribe::Line.new(quantity: 1, product: "imported bottle of perfume", price: 47.50) => {
+            quantity: 1, product: "imported bottle of perfume", total_price: 54.65, taxes: 7.15
+          },
+        }
+      end
+
+      it 'apply 5% tax' do
+        lines.each_pair do |line, expectation|
+          expect(sale_taxes.for(line).to_h).to match(expectation)
+        end
+      end
+
     end
   end
 
