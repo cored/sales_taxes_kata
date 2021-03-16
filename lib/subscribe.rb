@@ -30,9 +30,7 @@ Total: #{total_price})
     private
 
     def print_products
-      products.map do |item|
-        "#{item.quantity} #{item.product}: #{item.total_price}"
-      end.join("\n")
+      products.map(&:display).join("\n")
     end
 
     def products

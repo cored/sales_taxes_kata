@@ -26,6 +26,10 @@ module Subscribe
       }
     end
 
+    def display
+      "#{quantity} #{product}: #{total_price}"
+    end
+
     def total_price
       format("%.2f", taxes + line.total).to_f
     end
