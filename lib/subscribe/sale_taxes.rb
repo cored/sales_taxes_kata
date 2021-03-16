@@ -3,6 +3,8 @@ module Subscribe
     SALE_TAX = 0.10
     IMPORT_TAX = 0.05
 
+    PRECISION_RATE = 0.05
+
     def self.for(line)
       sale_rate = SALE_TAX unless line.exempt?
       import_rate = IMPORT_TAX if line.imported?
@@ -36,7 +38,7 @@ module Subscribe
     end
 
     def taxes
-      format("%.2f", ( (line.total * tax) / 0.05).ceil * 0.05).to_f
+      format("%.2f", ( (line.total * tax) / PRECISION_RATE).ceil * PRECISION_RATE).to_f
     end
   end
 end
