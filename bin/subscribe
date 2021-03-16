@@ -12,7 +12,7 @@ provided_inputs = [
 %Q(1 imported box of perfume at 27.99
 1 bottle of perfume at 18.99
 1 packet of headache pills at 9.75
-3 imported boxes of chocolates at 11.25)
+3 imported box of chocolates at 11.25)
 ]
 
 receipts = provided_inputs.map do |provided_input|

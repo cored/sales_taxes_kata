@@ -36,7 +36,7 @@ module Subscribe
     end
 
     def taxes
-      format("%.2f", ((line.total * tax) / 0.05).round * 0.05).to_f
+      format("%.2f", ( (line.total * tax) / 0.05).ceil * 0.05).to_f
     end
   end
 end

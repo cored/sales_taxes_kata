@@ -47,8 +47,8 @@ RSpec.describe Subscribe::SaleTaxes do
     context "when passing imported lines" do
       let(:lines) do
         {
-          Subscribe::Line.new(quantity: 1, product: "imported box of chocolates", price: 10.00) => {
-            quantity: 1, product: "imported box of chocolates", total_price: 10.50, taxes: 0.5
+          Subscribe::Line.new(quantity: 3, product: "imported box of chocolates", price: 11.25) => {
+            quantity: 3, product: "imported box of chocolates", total_price: 35.45, taxes: 1.7
           },
           Subscribe::Line.new(quantity: 1, product: "imported bottle of perfume", price: 47.50) => {
             quantity: 1, product: "imported bottle of perfume", total_price: 54.65, taxes: 7.15
