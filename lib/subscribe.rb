@@ -21,7 +21,19 @@ module Subscribe
       }
     end
 
+    def print
+%Q(#{print_products}
+Sales Taxes: #{format("%.2f", total_sale_taxes)}
+Total: #{total_price})
+    end
+
     private
+
+    def print_products
+      products.map do |item|
+        "#{item.quantity} #{item.product}: #{item.total_price}"
+      end.join("\n")
+    end
 
     def products
       lines_with_taxes
@@ -37,10 +49,14 @@ module Subscribe
 
   end
 
-  def call(line)
-    raise InvalidBasket if line.to_s.empty?
+  def call(basket)
+    raise InvalidBasket if basket.to_s.empty?
 
-    Receipt.for([Line.for(line)]).to_h
+    lines = basket.split(/\n/).map do |line_attributes|
+      Line.for(line_attributes)
+    end
+
+    Receipt.for(lines)
   end
 
 end
