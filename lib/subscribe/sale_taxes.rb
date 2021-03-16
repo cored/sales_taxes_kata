@@ -1,9 +1,14 @@
+require "forwardable"
+
 module Subscribe
   SaleTaxes = Struct.new(:line, :tax, keyword_init: true) do
     SALE_TAX = 0.10
     IMPORT_TAX = 0.05
 
     PRECISION_RATE = 0.05
+
+    extend Forwardable
+    def_delegators :line, :quantity, :price, :product
 
     def self.for(line)
       sale_rate = SALE_TAX unless line.exempt?
@@ -23,18 +28,6 @@ module Subscribe
 
     def total_price
       format("%.2f", taxes + line.total).to_f
-    end
-
-    def quantity
-      line.quantity
-    end
-
-    def product
-      line.product
-    end
-
-    def price
-      line.price
     end
 
     def taxes
